@@ -24,16 +24,14 @@ linuxdists='debian'
 vDEB='stable'
 VER='amd64'
 
-clear && echo -e "${OK} ${GreenBG} 开始自动重装Linux，发行版：${linuxdists} 版本：$vDEB 构架：$VER ${Font}"
+clear && echo -e "${OK} ${GreenBG} 开始自动重装Linux，发行版：${Font}$linuxdists${GreenBG} 版本：${Font}$vDEB${GreenBG} 构架：${Font}$VER"
 
-#下载安装文件
 wget -qO '/boot/initrd.gz' "https://deb.debian.org/debian/dists/$vDEB/main/installer-$VER/current/images/netboot/$linuxdists-installer/$VER/initrd.gz"
 [ $? -ne '0' ] && echo -ne "${Error} ${RedBG} 引导文件下载失败！${Font}" && exit 1
 echo -e "${OK} ${GreenBG} 引导文件下载成功！${Font}"
 wget -qO '/boot/linux' "https://deb.debian.org/debian/dists/$vDEB/main/installer-$VER/current/images/netboot/$linuxdists-installer/$VER/linux"
 [ $? -ne '0' ] && echo -ne "${Error} ${RedBG} 镜像文件下载失败！${Font}" && exit 1
 echo -e "${OK} ${GreenBG} 镜像文件下载成功！${Font}"
-#下载密钥
 wget -qO '/boot/authorized_keys' "https://raw.githubusercontent.com/tangzivps/VPSInit/main/id_rsa.pub"
 [ $? -ne '0' ] && echo -ne "${Error} ${RedBG} 密钥下载失败！${Font}" && exit 1
 echo -e "${OK} ${GreenBG} 密钥下载成功！${Font}"
@@ -102,7 +100,7 @@ for NetCFG in `ls -1 /etc/sysconfig/network-scripts/ifcfg-* |grep -v 'lo$' |grep
 done
 }
 }
-echo -e "${OK} ${GreenBG} 网络参数获取成功！${Font}"
+echo -e "${OK} ${GreenBG} 网络参数获取成功：${Font}"
 echo -e "I  P：$IPv4"
 echo -e "掩码：$MASK"
 echo -e "网关：$GATE"
@@ -274,10 +272,10 @@ sed -i 's/umount\ \/media.*\;//g' /boot/tmp/preseed.cfg
 echo -e "${OK} ${GreenBG} preseed文件设置成功！${Font}"
 
 #生成新的安装镜像
-find . | cpio -H newc --create | gzip -9 > ../initrd.gz
+echo -e "${WARN} ${Yellow} 正在压制新镜像……${Font}"
+find . | cpio -H newc --create --quiet | gzip -1 > ../initrd.gz
 rm -rf /boot/tmp
 }
-
 echo -e "${OK} ${GreenBG} 压制镜像成功！${Font}"
 
 chown root:root $GRUBDIR/$GRUBFILE
