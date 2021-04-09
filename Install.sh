@@ -1,29 +1,42 @@
 #!/bin/bash
 
-[ $EUID -ne 0 ] && echo "Error:This script must be run as root!" && exit 1
+#Fonts Color
+Green="\033[32m"
+Red="\033[31m"
+Yellow="\033[33m"
+GreenBG="\033[42;30m"
+RedBG="\033[41;30m"
+Font="\033[0m"
+
+#Notification Information
+OK="${Green}[OK]${Font}"
+WARN="${Yellow}[警告]${Font}"
+Error="${Red}[错误]${Font}"
+
+[ $EUID -ne 0 ] && echo "${Error} ${RedBG} 当前脚本必须运行在root模式下！${Font}" && exit 1
 [ -f /boot/grub/grub.cfg ] && GRUBOLD='0' && GRUBDIR='/boot/grub' && GRUBFILE='grub.cfg'
 [ -z $GRUBDIR ] && [ -f /boot/grub2/grub.cfg ] && GRUBOLD='0' && GRUBDIR='/boot/grub2' && GRUBFILE='grub.cfg'
 [ -z $GRUBDIR ] && [ -f /boot/grub/grub.conf ] && GRUBOLD='1' && GRUBDIR='/boot/grub' && GRUBFILE='grub.conf'
-[ -z $GRUBDIR -o -z $GRUBFILE ] && echo "Error! Not Found grub path." && exit 1
+[ -z $GRUBDIR -o -z $GRUBFILE ] && echo "${Error} ${RedBG} 没有找到 grub 目录 ${Font}" && exit 1
 
 #设置linux版本
 linuxdists='debian'
 vDEB='stable'
 VER='amd64'
 
-clear && echo -e "\n\033[36m# Install\033[0m\n"
-LinuxName='Debian'
+clear && echo -e "${OK} ${GreenBG} 开始自动重装Linux，发行版：${linuxdists} 版本：$vDEB 构架：$VER ${Font}"
 
 #下载安装文件
-echo -e "\033[34mAuto Mode\033[0m insatll \033[33m$LinuxName\033[0m [\033[33m$vDEB\033[0m] [\033[33m$VER\033[0m]. "
-echo -e "\n[\033[33m$vDEB\033[0m] [\033[33m$VER\033[0m] Downloading..."
-wget -O '/boot/initrd.gz' "https://deb.debian.org/debian/dists/$vDEB/main/installer-$VER/current/images/netboot/$linuxdists-installer/$VER/initrd.gz"
-[ $? -ne '0' ] && echo -ne "\033[31mError! \033[0mDownload 'initrd.gz' failed! \n" && exit 1
-wget -O '/boot/linux' "https://deb.debian.org/debian/dists/$vDEB/main/installer-$VER/current/images/netboot/$linuxdists-installer/$VER/linux"
-[ $? -ne '0' ] && echo -ne "\033[31mError! \033[0mDownload linux failed! \n" && exit 1
+wget -qO '/boot/initrd.gz' "https://deb.debian.org/debian/dists/$vDEB/main/installer-$VER/current/images/netboot/$linuxdists-installer/$VER/initrd.gz"
+[ $? -ne '0' ] && echo -ne "${Error} ${RedBG} 引导文件下载失败！${Font}" && exit 1
+echo -e "${OK} ${GreenBG} 引导文件下载成功！${Font}"
+wget -qO '/boot/linux' "https://deb.debian.org/debian/dists/$vDEB/main/installer-$VER/current/images/netboot/$linuxdists-installer/$VER/linux"
+[ $? -ne '0' ] && echo -ne "${Error} ${RedBG} 镜像文件下载失败！${Font}" && exit 1
+echo -e "${OK} ${GreenBG} 镜像文件下载成功！${Font}"
 #下载密钥
-wget -O '/boot/authorized_keys' "https://raw.githubusercontent.com/tangzivps/VPSInit/main/id_rsa.pub"
-[ $? -ne '0' ] && echo -ne "\033[31mError! \033[0mDownload authorized_keys failed! \n" && exit 1
+wget -qO '/boot/authorized_keys' "https://raw.githubusercontent.com/tangzivps/VPSInit/main/id_rsa.pub"
+[ $? -ne '0' ] && echo -ne "${Error} ${RedBG} 密钥下载失败！${Font}" && exit 1
+echo -e "${OK} ${GreenBG} 密钥下载成功！${Font}"
 
 #获取网络参数
 DEFAULTNET="$(ip route show |grep -o 'default via [0-9]\{1,3\}.[0-9]\{1,3\}.[0-9]\{1,3\}.[0-9]\{1,3\}.*' |head -n1 |sed 's/proto.*\|onlink.*//g' |awk '{print $NF}')"
@@ -34,7 +47,7 @@ GATE="$(ip route show |grep -o 'default via [0-9]\{1,3\}.[0-9]\{1,3\}.[0-9]\{1,3
 [ -n "$NETSUB" ] && MASK="$(echo -n '128.0.0.0/1,192.0.0.0/2,224.0.0.0/3,240.0.0.0/4,248.0.0.0/5,252.0.0.0/6,254.0.0.0/7,255.0.0.0/8,255.128.0.0/9,255.192.0.0/10,255.224.0.0/11,255.240.0.0/12,255.248.0.0/13,255.252.0.0/14,255.254.0.0/15,255.255.0.0/16,255.255.128.0/17,255.255.192.0/18,255.255.224.0/19,255.255.240.0/20,255.255.248.0/21,255.255.252.0/22,255.255.254.0/23,255.255.255.0/24,255.255.255.128/25,255.255.255.192/26,255.255.255.224/27,255.255.255.240/28,255.255.255.248/29,255.255.255.252/30,255.255.255.254/31,255.255.255.255/32' |grep -o '[0-9]\{1,3\}.[0-9]\{1,3\}.[0-9]\{1,3\}.[0-9]\{1,3\}'${NETSUB}'' |cut -d'/' -f1)"
 
 [ -n "$GATE" ] && [ -n "$MASK" ] && [ -n "$IPv4" ] || {
-echo "Not found \`ip command\`, It will use \`route command\`."
+echo -e "${WARN} ${Yellow} 没有找到IP配置，将使用路由设置${Font}"
 ipNum() {
   local IFS='.'
   read ip1 ip2 ip3 ip4 <<<"$1"
@@ -57,7 +70,7 @@ echo ${arrayNum[@]} |sed 's/\s/\n/g' |sort -n -k 1 -t ',' |tail -n1 |cut -d',' -
 [[ -z $MASK ]] && MASK="$(SelectMax 3)"
 
 [ -n "$GATE" ] && [ -n "$MASK" ] && [ -n "$IPv4" ] || {
-echo "Error! Not configure network. "
+echo -ne "${Error} ${RedBG} 无法配置网络！${Font}"
 exit 1
 }
 }
@@ -89,8 +102,13 @@ for NetCFG in `ls -1 /etc/sysconfig/network-scripts/ifcfg-* |grep -v 'lo$' |grep
 done
 }
 }
+echo -e "${OK} ${GreenBG} 网络参数获取成功！${Font}"
+echo -e "I  P：$IPv4"
+echo -e "掩码：$MASK"
+echo -e "网关：$GATE"
 
-#设置启动文件
+
+#设置启动项
 [ ! -f $GRUBDIR/$GRUBFILE ] && echo "Error! Not Found $GRUBFILE. " && exit 1
 
 [ ! -f $GRUBDIR/$GRUBFILE.old ] && [ -f $GRUBDIR/$GRUBFILE.bak ] && mv -f $GRUBDIR/$GRUBFILE.bak $GRUBDIR/$GRUBFILE.old
@@ -106,18 +124,18 @@ for CFGtmp in `awk '/}/{print NR}' $GRUBDIR/$GRUBFILE`
   [ $CFGtmp -gt "$CFG0" -a $CFGtmp -lt "$CFG2" ] && CFG1="$CFGtmp";
  done
 [ -z "$CFG1" ] && {
-echo "Error! read $GRUBFILE. "
+echo -ne "${Error} ${RedBG} 读取$GRUBFILE错误 ${Font}"
 exit 1
 }
 sed -n "$CFG0,$CFG1"p $GRUBDIR/$GRUBFILE >/tmp/grub.new
 [ -f /tmp/grub.new ] && [ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ] || {
-echo -ne "\033[31mError! \033[0mNot configure $GRUBFILE. \n"
+echo -ne "${Error} ${RedBG} $GRUBFILE配置错误 ${Font}"
 exit 1
 }
 
 sed -i "/menuentry.*/c\menuentry\ \'Install OS \[$vDEB\ $VER\]\'\ --class debian\ --class\ gnu-linux\ --class\ gnu\ --class\ os\ \{" /tmp/grub.new
 [ "$(grep -c '{' /tmp/grub.new)" -eq "$(grep -c '}' /tmp/grub.new)" ] || {
-echo "Error! configure append $GRUBFILE. "
+echo -ne "${Error} ${RedBG} $GRUBFILE添加启动项错误 ${Font}"
 exit 1
 }
 sed -i "/echo.*Loading/d" /tmp/grub.new
@@ -128,7 +146,7 @@ CFG0="$(awk '/title /{print NR}' $GRUBDIR/$GRUBFILE|head -n 1)"
 CFG1="$(awk '/title /{print NR}' $GRUBDIR/$GRUBFILE|head -n 2 |tail -n 1)"
 [ -n $CFG0 ] && [ -z $CFG1 -o $CFG1 == $CFG0 ] && sed -n "$CFG0,$"p $GRUBDIR/$GRUBFILE >/tmp/grub.new
 [ -n $CFG0 ] && [ -z $CFG1 -o $CFG1 != $CFG0 ] && sed -n "$CFG0,$CFG1"p $GRUBDIR/$GRUBFILE >/tmp/grub.new
-[ ! -f /tmp/grub.new ] && echo "Error! configure append $GRUBFILE. " && exit 1
+[ ! -f /tmp/grub.new ] && echo -ne "${Error} ${RedBG} $GRUBFILE添加启动项错误 ${Font}" && exit 1
 sed -i "/title.*/c\title\ \'Install OS \[$vDEB\ $VER\]\'" /tmp/grub.new
 sed -i '/^#/d' /tmp/grub.new
 }
@@ -155,8 +173,12 @@ GRUBPATCH='0'
 [ -f /etc/network/interfaces -o -d /etc/sysconfig/network-scripts ] && {
 sed -i ''${CFG0}'i\\n' $GRUBDIR/$GRUBFILE
 sed -i ''${CFG0}'r /tmp/grub.new' $GRUBDIR/$GRUBFILE
-[ -z $AutoNet ] && echo "Error, Not found interfaces config." && exit 1
+[ -z $AutoNet ] && echo -ne "${Error} ${RedBG} 未找到用户配置 ${Font}" && exit 1
 [ -f  $GRUBDIR/grubenv ] && sed -i 's/saved_entry/#saved_entry/g' $GRUBDIR/grubenv
+
+echo -e "${OK} ${GreenBG} 启动项设置成功！${Font}"
+
+#重新压制镜像文件
 [ -d /boot/tmp ] && rm -rf /boot/tmp
 mkdir -p /boot/tmp/
 cp /boot/authorized_keys /boot/tmp/authorized_keys;
@@ -232,7 +254,7 @@ sed -ri 's/^#?Port.*/Port 16322/g' /target/etc/ssh/sshd_config; \
 sed -ri 's/^#?PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config; \
 sed -ri 's/^#?PubkeyAuthentication.*/PubkeyAuthentication yes/g' /target/etc/ssh/sshd_config; \
 sed -ri 's/^#?PasswordAuthentication.*/PasswordAuthentication no/g' /target/etc/ssh/sshd_config; \
-echo 'net.core.default_qdisc=fq' >> /target/etc/sysctl.conf; \
+echo 'net.core.default_qdisc=cake' >> /target/etc/sysctl.conf; \
 echo 'net.ipv4.tcp_congestion_control=bbr' >> /target/etc/sysctl.conf; \
 wget -O /target/root/.zshrc 'https://raw.githubusercontent.com/skywind3000/vim/master/etc/prezto.zsh'; \
 in-target chsh -s /bin/zsh;
@@ -249,14 +271,18 @@ sed -i '/user-setup\/encrypt-home/d' /boot/tmp/preseed.cfg
 sed -i '/pkgsel\/update-policy/d' /boot/tmp/preseed.cfg
 sed -i 's/umount\ \/media.*\;//g' /boot/tmp/preseed.cfg
 
+echo -e "${OK} ${GreenBG} preseed文件设置成功！${Font}"
+
 #生成新的安装镜像
 find . | cpio -H newc --create | gzip -9 > ../initrd.gz
 rm -rf /boot/tmp
 }
 
+echo -e "${OK} ${GreenBG} 压制镜像成功！${Font}"
+
 chown root:root $GRUBDIR/$GRUBFILE
 chmod 444 $GRUBDIR/$GRUBFILE
 
-echo -e "\nWill reboot in 3s…… "
+echo -e "${WARN} ${Yellow} 系统将在3秒后重启！${Font}"
 
 sleep 3 && reboot >/dev/null 2>&1
