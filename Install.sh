@@ -11,9 +11,6 @@ RedBG="\033[41;37m"
 OK="${Green}[OK]${Font}"
 ERROR="${Red}[ERROR]${Font}"
 
-# 变量
-BootTmp='/boot/tmp'
-
 function print_ok() {
   echo -e "${OK} ${Blue} $1 ${Font}"
 }
@@ -54,10 +51,7 @@ function system_check() {
   fi
 }
 
-
 function download_initrd() {
-  vDEB='stable'
-  VER='amd64'
   print_ok "开始自动重装Debian，版本：$vDEB 构架：$VER"
   wget -qO '/boot/initrd.gz' "https://deb.debian.org/debian/dists/$vDEB/main/installer-$VER/current/images/netboot/debian-installer/$VER/initrd.gz"
   judge "下载initrd.gz"
@@ -182,6 +176,7 @@ d-i mirror/country string manual
 d-i mirror/http/hostname string deb.debian.org
 d-i mirror/http/directory string /debian
 d-i mirror/http/proxy string
+d-i base-installer/kernel/image string linux-image-cloud-$VER
 
 d-i apt-setup/services-select multiselect
 
@@ -257,7 +252,26 @@ function remake_initrd() {
   rm -rf ${BootTmp}
 }
 
-clear
+#变量
+BootTmp='/boot/tmp'
+vDEB='stable'
+VER='amd64'
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --test)
+            vDEB='testing'
+            ;;
+        --arm)
+            VER='arm64'
+            ;;
+        *)
+            print_error "未知选项: \"$1\"，仅支持参数--test、--arm，分别为使用测试版本、arm内核"
+            exit 1
+    esac
+    shift
+done
+
 is_root
 system_check
 download_initrd

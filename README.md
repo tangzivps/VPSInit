@@ -3,6 +3,12 @@
 
 其他人欢迎使用，用完你就没法登录！
 
-安装方法：
+## 使用方法：
 
-bash <(wget -qO- 'https://raw.githubusercontent.com/tangzivps/VPSInit/main/Install.sh')
+    bash <(curl -fLO 'https://raw.githubusercontent.com/tangzivps/VPSInit/main/Install.sh')
+或者
+    bash <(wget -qO- 'https://raw.githubusercontent.com/tangzivps/VPSInit/main/Install.sh')
+
+## 参数
+ * `--test` 使用正在测试的debian版本（一般内核较新）
+ * `--arm` 使用ARM架构的内核
