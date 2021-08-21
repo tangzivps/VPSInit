@@ -7,6 +7,7 @@
 
     bash <(curl -fLO 'https://raw.githubusercontent.com/tangzivps/VPSInit/main/Install.sh')
 或者
+
     bash <(wget -qO- 'https://raw.githubusercontent.com/tangzivps/VPSInit/main/Install.sh')
 
 ## 参数
