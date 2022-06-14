@@ -207,7 +207,7 @@ d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
 
 tasksel tasksel/first multiselect minimal
-d-i pkgsel/include string openssh-server wget curl python zsh docker.io
+d-i pkgsel/include string openssh-server wget curl zsh docker.io
 d-i pkgsel/upgrade select safe-upgrade
 d-i pkgsel/update-policy select unattended-upgrades
 
